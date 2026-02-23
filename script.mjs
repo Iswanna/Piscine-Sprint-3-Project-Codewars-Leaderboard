@@ -1,4 +1,4 @@
-import { fetchAllUsers } from "./api.mjs";
+import { fetchAllUsers, sanitizeInput } from "./api.mjs";
 
 const form = document.querySelector("#user-form");
 const input = document.querySelector("#username-input");
@@ -8,10 +8,8 @@ form.addEventListener("submit", async (event) => {
   event.preventDefault();
   messageContainer.innerHTML = ""; // Clear UI
 
-  const usernames = input.value
-    .split(",")
-    .map((n) => n.trim())
-    .filter((n) => n !== "");
+  const usernames = sanitizeInput(input.value);
+
   // Better empty input handling
   if (usernames.length === 0) {
     renderGeneralError("Please enter at least one username.");
@@ -47,4 +45,3 @@ function renderGeneralError(message) {
   errorPara.textContent = message;
   messageContainer.appendChild(errorPara);
 }
-
