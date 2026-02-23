@@ -6,7 +6,21 @@
     <title>Codewars leaderboard</title>
     <link rel="stylesheet" href="style.css" />
   </head>
-  <body></body>
+  <body>
+    <h1>Codewars Leaderboard</h1>
+
+    <!-- FORM IS NEEDED to trigger the test -->
+    <form id="user-form">
+      <label for="username-input">Enter Usernames:</label>
+      <input
+        type="text"
+        id="username-input"
+        placeholder="e.g. g964, jhoffner"
+        autocomplete="off"
+      />
+      <button type="submit">Fetch Data</button>
+    </form>
+  </body>
 
   <script src="script.mjs" type="module"></script>
 </html>
