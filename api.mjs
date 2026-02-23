@@ -26,3 +26,10 @@ export async function fetchAllUsers(usernames) {
   const promises = usernames.map((name) => fetchUser(name));
   return await Promise.all(promises);
 }
+
+export function sanitizeInput(inputString) {
+  return inputString
+    .split(",")
+    .map((n) => n.trim())
+    .filter((n) => n !== "");
+}

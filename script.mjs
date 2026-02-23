@@ -1,33 +1,62 @@
-import { fetchAllUsers } from "./api.mjs";
+import { fetchAllUsers, sanitizeInput } from "./api.mjs";
 
 const form = document.querySelector("#user-form");
 const input = document.querySelector("#username-input");
+const messageContainer = document.querySelector("#message-container");
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
+  messageContainer.innerHTML = ""; // Clear UI
 
-  // Clean the input: split by comma, remove spaces, ignore empty strings
-  const usernames = input.value
-    .split(",")
-    .map((name) => name.trim())
-    .filter((name) => name !== "");
+  const usernames = sanitizeInput(input.value);
 
+  // Better empty input handling
   if (usernames.length === 0) {
-    alert("Please enter at least one username");
+    renderGeneralError("Please enter at least one username.");
     return;
   }
 
   try {
     const results = await fetchAllUsers(usernames);
 
-    // Filter results into two groups
-    const validUsers = results.filter((r) => r.success).map((r) => r.data);
-    const failedUsers = results.filter((r) => !r.success);
+    const validUsers = results.filter((result) => result.success);
+    const failedUsers = results.filter((result) => !result.success);
 
-    // This is the "Verification" for Ticket 3
-    console.log("Successfully fetched:", validUsers);
-    console.log("Failed to fetch:", failedUsers);
+    // Check if ALL users failed with network errors
+    const networkErrors = failedUsers.filter(
+      (failedUser) => failedUser.error === "Network error",
+    );
+    if (networkErrors.length > 0 && networkErrors.length === usernames.length) {
+      renderGeneralError(
+        "Something went wrong. Please check your internet connection.",
+      );
+      return;
+    }
+
+    console.log("Successfully fetched users:", validUsers);
+
+    if (failedUsers.length > 0) {
+      renderErrors(failedUsers);
+    }
   } catch (globalError) {
-    console.error("An unexpected error occurred:", globalError);
+    // Safety net for network/unexpected errors
+    renderGeneralError(
+      "Something went wrong. Please check your internet connection.",
+    );
   }
 });
+
+function renderErrors(failedUsers) {
+  const userList = failedUsers.map((user) => `"${user.username}"`).join(", ");
+  const errorPara = document.createElement("p");
+  errorPara.className = "error-message";
+  errorPara.textContent = `The following users could not be found: ${userList}`;
+  messageContainer.appendChild(errorPara);
+}
+
+function renderGeneralError(message) {
+  const errorPara = document.createElement("p");
+  errorPara.className = "error-message";
+  errorPara.textContent = message;
+  messageContainer.appendChild(errorPara);
+}

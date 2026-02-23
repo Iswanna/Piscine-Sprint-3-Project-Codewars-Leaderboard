@@ -3,6 +3,7 @@
     "test": "node --test"
   },
   "devDependencies": {
+    "chai": "^6.2.2",
     "nock": "^14.0.0-beta.15"
   }
 }

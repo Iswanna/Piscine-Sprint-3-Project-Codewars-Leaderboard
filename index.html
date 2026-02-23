@@ -9,7 +9,6 @@
   <body>
     <h1>Codewars Leaderboard</h1>
 
-    <!-- FORM IS NEEDED to trigger the test -->
     <form id="user-form">
       <label for="username-input">Enter Usernames:</label>
       <input
@@ -20,6 +19,9 @@
       />
       <button type="submit">Fetch Data</button>
     </form>
+
+    <!-- Placeholder for messages/errors -->
+    <div id="message-container" role="alert" aria-live="polite"></div>
   </body>
 
   <script src="script.mjs" type="module"></script>
