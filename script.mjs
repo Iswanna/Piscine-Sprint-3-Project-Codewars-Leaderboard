@@ -2,32 +2,27 @@ import { fetchAllUsers } from "./api.mjs";
 
 const form = document.querySelector("#user-form");
 const input = document.querySelector("#username-input");
+const messageContainer = document.querySelector("#message-container");
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
+  messageContainer.innerHTML = ""; // Clear UI
 
-  // Clean the input: split by comma, remove spaces, ignore empty strings
-  const usernames = input.value
-    .split(",")
-    .map((name) => name.trim())
-    .filter((name) => name !== "");
+  const usernames = input.value.split(",").map(n => n.trim()).filter(n => n !== "");
+  if (usernames.length === 0) return;
 
-  if (usernames.length === 0) {
-    alert("Please enter at least one username");
-    return;
-  }
+  const results = await fetchAllUsers(usernames);
+  const failedUsers = results.filter((r) => !r.success);
 
-  try {
-    const results = await fetchAllUsers(usernames);
-
-    // Filter results into two groups
-    const validUsers = results.filter((r) => r.success).map((r) => r.data);
-    const failedUsers = results.filter((r) => !r.success);
-
-    // This is the "Verification" for Ticket 3
-    console.log("Successfully fetched:", validUsers);
-    console.log("Failed to fetch:", failedUsers);
-  } catch (globalError) {
-    console.error("An unexpected error occurred:", globalError);
+  if (failedUsers.length > 0) {
+    renderErrors(failedUsers);
   }
 });
+
+function renderErrors(failedUsers) {
+  const userList = failedUsers.map(u => `"${u.username}"`).join(", ");
+  const errorPara = document.createElement("p");
+  errorPara.className = "error-message";
+  errorPara.textContent = `The following users could not be found: ${userList}`;
+  messageContainer.appendChild(errorPara);
+}
