@@ -33,3 +33,22 @@ export function sanitizeInput(inputString) {
     .map((n) => n.trim())
     .filter((n) => n !== "");
 }
+
+/**
+ * Scans all fetched users to find every unique language they have a rank in.
+ */
+export function getUniqueLanguages(users) {
+  const languages = new Set();
+
+  users.forEach((user) => {
+    // Codewars stores languages inside user.ranks.languages
+    if (user.ranks && user.ranks.languages) {
+      Object.keys(user.ranks.languages).forEach((lang) => {
+        languages.add(lang);
+      });
+    }
+  });
+
+  // Return as an array, sorted alphabetically
+  return Array.from(languages).sort();
+}
