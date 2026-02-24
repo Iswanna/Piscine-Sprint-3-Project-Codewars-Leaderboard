@@ -1,4 +1,4 @@
-import { fetchAllUsers, sanitizeInput } from "./api.mjs";
+import { fetchAllUsers, sanitizeInput, getUniqueLanguages } from "./api.mjs";
 
 const form = document.querySelector("#user-form");
 const input = document.querySelector("#username-input");
@@ -19,21 +19,33 @@ form.addEventListener("submit", async (event) => {
   try {
     const results = await fetchAllUsers(usernames);
 
-    const validUsers = results.filter((result) => result.success);
+    const validUsers = results
+      .filter((result) => result.success)
+      .map((res) => res.data);
     const failedUsers = results.filter((result) => !result.success);
+
+    if (validUsers.length > 0) {
+      // Get the languages from the users
+      const languages = getUniqueLanguages(validUsers);
+
+      // Setup the dropdown
+      setupDropdown(languages);
+
+      // Initial render (Default: Overall)
+      renderLeaderboard(validUsers, "overall");
+    }
 
     // Check if ALL users failed with network errors
     const networkErrors = failedUsers.filter(
       (failedUser) => failedUser.error === "Network error",
     );
+
     if (networkErrors.length > 0 && networkErrors.length === usernames.length) {
       renderGeneralError(
         "Something went wrong. Please check your internet connection.",
       );
       return;
     }
-
-    console.log("Successfully fetched users:", validUsers);
 
     if (failedUsers.length > 0) {
       renderErrors(failedUsers);
