@@ -1,4 +1,9 @@
-import { fetchAllUsers, sanitizeInput, getUniqueLanguages } from "./api.mjs";
+import {
+  fetchAllUsers,
+  sanitizeInput,
+  getUniqueLanguages,
+  processLeaderboardData,
+} from "./api.mjs";
 
 // Central State: Keeps track of current data so we don't have to re-fetch
 const appState = {
@@ -6,11 +11,15 @@ const appState = {
   selectedLanguage: "overall",
 };
 
-// Select HTML elements with descriptive names
+// Select HTML elements
 const leaderboardForm = document.querySelector("#user-form");
 const usernameInput = document.querySelector("#username-input");
 const feedbackMessageContainer = document.querySelector("#message-container");
 const languageSelector = document.querySelector("#language-select");
+
+// NEW: Select containers to show/hide for accessibility
+const filterContainer = document.querySelector("#filter-container");
+const leaderboardTable = document.querySelector("#leaderboard");
 
 leaderboardForm.addEventListener("submit", async (event) => {
   event.preventDefault(); // Stop page from refreshing
@@ -39,14 +48,23 @@ leaderboardForm.addEventListener("submit", async (event) => {
       }
     });
 
-    // 1. If we retrieved valid users, update the global state and table
+    // 1. If we retrieved valid users, update the global state and UI
     if (successfullyFetchedUsers.length > 0) {
       appState.userList = successfullyFetchedUsers;
-      appState.selectedLanguage = "overall"; // Reset to overall on every new search
+      appState.selectedLanguage = "overall";
+
+      // FIX: Reveal the table and filter now that data exists
+      // This prevents Lighthouse from seeing "empty" table headers on page load
+      filterContainer.classList.remove("hidden");
+      leaderboardTable.classList.remove("hidden");
 
       const availableLanguages = getUniqueLanguages(appState.userList);
       populateLanguageDropdown(availableLanguages);
       renderLeaderboardTable();
+    } else {
+      // Optional: Hide the table if a new search results in 0 valid users
+      filterContainer.classList.add("hidden");
+      leaderboardTable.classList.add("hidden");
     }
 
     // 2. Handle specific errors for users not found or network issues
@@ -100,41 +118,13 @@ function renderLeaderboardTable() {
   const rowTemplate = document.querySelector("#user-row-template");
   tableBody.innerHTML = ""; // Empty the table before drawing new rows
 
-  // Step 1: Filter users to find those who have a score in the chosen language
-  const usersMatchingCriteria = [];
+  // Step 1: Get the filtered and sorted data from our tested logic function
+  const usersMatchingCriteria = processLeaderboardData(
+    appState.userList,
+    appState.selectedLanguage,
+  );
 
-  appState.userList.forEach((currentUser) => {
-    let relevantScore;
-
-    if (appState.selectedLanguage === "overall") {
-      relevantScore = currentUser.ranks.overall.score;
-    } else {
-      // Look at the specific languages this user knows
-      const languageDetails =
-        currentUser.ranks.languages[appState.selectedLanguage];
-
-      // If the user actually has a rank in this specific language, get the score
-      if (languageDetails) {
-        relevantScore = languageDetails.score;
-      }
-    }
-
-    // Only add to the display list if a score was found
-    if (relevantScore !== undefined) {
-      usersMatchingCriteria.push({
-        username: currentUser.username,
-        clan: currentUser.clan || "No Clan",
-        score: relevantScore,
-      });
-    }
-  });
-
-  // Step 2: Sort the users from highest score to lowest score
-  usersMatchingCriteria.sort((firstUser, secondUser) => {
-    return secondUser.score - firstUser.score;
-  });
-
-  // Step 3: Create the HTML rows and add them to the table
+  // Step 2: Create the HTML rows and add them to the table
   usersMatchingCriteria.forEach((displayUser, userRankIndex) => {
     const templateContent = rowTemplate.content.cloneNode(true);
     const tableRow = templateContent.querySelector("tr");

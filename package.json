@@ -1,6 +1,9 @@
 {
+  "name": "codewars-leaderboard",
+  "version": "1.0.0",
+  "type": "module",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test api.test.mjs"
   },
   "devDependencies": {
     "chai": "^6.2.2",

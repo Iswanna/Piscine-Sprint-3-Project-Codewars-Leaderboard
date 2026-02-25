@@ -52,3 +52,39 @@ export function getUniqueLanguages(users) {
   // Return as an array, sorted alphabetically
   return Array.from(languages).sort();
 }
+
+/**
+ * Processes raw user data into a sorted list based on a selected language.
+ * This is a "Non-Trivial" logic function.
+ */
+export function processLeaderboardData(users, selectedLanguage) {
+  const processedList = [];
+
+  users.forEach((user) => {
+    let score;
+
+    if (selectedLanguage === "overall") {
+      score = user.ranks.overall.score;
+    } else {
+      const languageInfo = user.ranks.languages[selectedLanguage];
+      if (languageInfo) {
+        score = languageInfo.score;
+      }
+    }
+
+    if (score !== undefined) {
+      processedList.push({
+        username: user.username,
+        clan: user.clan || "No Clan",
+        score: score,
+      });
+    }
+  });
+
+  // Sort from highest score to lowest
+  processedList.sort((firstUser, secondUser) => {
+    return secondUser.score - firstUser.score;
+  });
+
+  return processedList;
+}
