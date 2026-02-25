@@ -11,11 +11,15 @@ const appState = {
   selectedLanguage: "overall",
 };
 
-// Select HTML elements with descriptive names
+// Select HTML elements
 const leaderboardForm = document.querySelector("#user-form");
 const usernameInput = document.querySelector("#username-input");
 const feedbackMessageContainer = document.querySelector("#message-container");
 const languageSelector = document.querySelector("#language-select");
+
+// NEW: Select containers to show/hide for accessibility
+const filterContainer = document.querySelector("#filter-container");
+const leaderboardTable = document.querySelector("#leaderboard");
 
 leaderboardForm.addEventListener("submit", async (event) => {
   event.preventDefault(); // Stop page from refreshing
@@ -44,14 +48,23 @@ leaderboardForm.addEventListener("submit", async (event) => {
       }
     });
 
-    // 1. If we retrieved valid users, update the global state and table
+    // 1. If we retrieved valid users, update the global state and UI
     if (successfullyFetchedUsers.length > 0) {
       appState.userList = successfullyFetchedUsers;
-      appState.selectedLanguage = "overall"; // Reset to overall on every new search
+      appState.selectedLanguage = "overall";
+
+      // FIX: Reveal the table and filter now that data exists
+      // This prevents Lighthouse from seeing "empty" table headers on page load
+      filterContainer.classList.remove("hidden");
+      leaderboardTable.classList.remove("hidden");
 
       const availableLanguages = getUniqueLanguages(appState.userList);
       populateLanguageDropdown(availableLanguages);
       renderLeaderboardTable();
+    } else {
+      // Optional: Hide the table if a new search results in 0 valid users
+      filterContainer.classList.add("hidden");
+      leaderboardTable.classList.add("hidden");
     }
 
     // 2. Handle specific errors for users not found or network issues

@@ -23,20 +23,19 @@
     <!-- Placeholder for messages/errors -->
     <div id="message-container" role="alert" aria-live="polite"></div>
 
-    <div id="filter-container">
+    <div id="filter-container" class="hidden">
       <label for="language-select">View Ranking for:</label>
       <select id="language-select">
         <option value="overall">Overall</option>
       </select>
     </div>
 
-    <!-- Leaderboard Table -->
-    <table id="leaderboard">
+    <table id="leaderboard" class="hidden">
       <thead>
         <tr>
-          <th>Username</th>
-          <th>Clan</th>
-          <th>Score</th>
+          <th scope="col">Username</th>
+          <th scope="col">Clan</th>
+          <th scope="col">Score</th>
         </tr>
       </thead>
       <tbody id="leaderboard-body">
