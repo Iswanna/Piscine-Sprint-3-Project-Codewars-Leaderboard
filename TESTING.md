@@ -32,12 +32,16 @@
 
 9. **Top user is visually highlighted:**
    - _Manual Test:_ Verified that the `winner-highlight` CSS class is applied to the first row (index 0).
+     ![Winner Highlight](./images/winner-highlight.png)
 
 10. **100 Accessibility in Lighthouse:**
-    - _Manual Test:_ Ran Lighthouse Audit. Fixed touch targets and color contrast to achieve a score of 100.
+    - _Manual Test:_ I ran the Chrome DevTools Lighthouse audit in "Navigation" mode for "Mobile" and "Desktop".
+    - _Result:_ I achieved a score of 100 by fixing color contrast on buttons and increasing touch target sizes.
+      ![Lighthouse Score](./images/accessibility-score.png)
 
 11. **Unit tests for non-trivial function:**
     - _Unit Test:_ **Unit tests in `api.test.mjs`**. Specifically tested `processLeaderboardData`, which handles the complex logic of mapping raw API data, filtering by language, and sorting scores.
+      ![Unit tests](./images/unit-tests.png)
 
 12. **Message for non-existent users:**
     - _Manual Test:_ Entered "invalid_user_123" and verified the UI message appeared using the `wrongName` variable.
