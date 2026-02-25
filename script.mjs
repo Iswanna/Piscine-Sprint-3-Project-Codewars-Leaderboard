@@ -1,4 +1,9 @@
-import { fetchAllUsers, sanitizeInput, getUniqueLanguages } from "./api.mjs";
+import {
+  fetchAllUsers,
+  sanitizeInput,
+  getUniqueLanguages,
+  processLeaderboardData,
+} from "./api.mjs";
 
 // Central State: Keeps track of current data so we don't have to re-fetch
 const appState = {
@@ -100,41 +105,13 @@ function renderLeaderboardTable() {
   const rowTemplate = document.querySelector("#user-row-template");
   tableBody.innerHTML = ""; // Empty the table before drawing new rows
 
-  // Step 1: Filter users to find those who have a score in the chosen language
-  const usersMatchingCriteria = [];
+  // Step 1: Get the filtered and sorted data from our tested logic function
+  const usersMatchingCriteria = processLeaderboardData(
+    appState.userList,
+    appState.selectedLanguage,
+  );
 
-  appState.userList.forEach((currentUser) => {
-    let relevantScore;
-
-    if (appState.selectedLanguage === "overall") {
-      relevantScore = currentUser.ranks.overall.score;
-    } else {
-      // Look at the specific languages this user knows
-      const languageDetails =
-        currentUser.ranks.languages[appState.selectedLanguage];
-
-      // If the user actually has a rank in this specific language, get the score
-      if (languageDetails) {
-        relevantScore = languageDetails.score;
-      }
-    }
-
-    // Only add to the display list if a score was found
-    if (relevantScore !== undefined) {
-      usersMatchingCriteria.push({
-        username: currentUser.username,
-        clan: currentUser.clan || "No Clan",
-        score: relevantScore,
-      });
-    }
-  });
-
-  // Step 2: Sort the users from highest score to lowest score
-  usersMatchingCriteria.sort((firstUser, secondUser) => {
-    return secondUser.score - firstUser.score;
-  });
-
-  // Step 3: Create the HTML rows and add them to the table
+  // Step 2: Create the HTML rows and add them to the table
   usersMatchingCriteria.forEach((displayUser, userRankIndex) => {
     const templateContent = rowTemplate.content.cloneNode(true);
     const tableRow = templateContent.querySelector("tr");
