@@ -4,7 +4,7 @@
 
 1. **Accepts comma-separated list of users:**
    - _Manual Test:_ Entered "g964, jhoffner" in the input. Verified that both names were processed.
-   - _Unit Test:_ `sanitizeInput` function in `api.test.mjs` verifies that spaces and empty commas are handled correctly.
+   - _Unit Test:_ `sanitizeInput` in `api.test.mjs` verifies that spaces and empty commas are handled correctly.
 
 2. **Fetches data from Codewars API:**
    - _Manual Test:_ Verified via Network Tab that requests are sent to `https://www.codewars.com/api/v1/users/`.
@@ -23,11 +23,12 @@
    - _Manual Test:_ Selected "JavaScript" from the dropdown and verified scores changed to JS-specific scores.
 
 7. **Sorted highest to lowest:**
-   - _Manual Test:_ Verified that users are displayed in descending score order (highest first).
-   - _Implementation:_ Sorting logic in `renderLeaderboardTable()` function in `script.mjs`.
+   - _Manual Test:_ Verified visually that users are displayed in descending score order.
+   - _Unit Test:_ **Unit tests in `api.test.mjs`**. The `processLeaderboardData` test confirms that users are sorted correctly from highest to lowest score.
 
 8. **Users without a ranking are hidden:**
    - _Manual Test:_ Selected a language only one user had; verified other users disappeared from the table.
+   - _Unit Test:_ **Unit tests in `api.test.mjs`**. The `processLeaderboardData` test confirms that users without the selected language are filtered out.
 
 9. **Top user is visually highlighted:**
    - _Manual Test:_ Verified that the `winner-highlight` CSS class is applied to the first row (index 0).
@@ -36,10 +37,10 @@
     - _Manual Test:_ Ran Lighthouse Audit. Fixed touch targets and color contrast to achieve a score of 100.
 
 11. **Unit tests for non-trivial function:**
-    - _Unit Test:_ Located in `api.test.mjs`. Tests `fetchUser` for success (200), not found (404), and network errors. Tests `sanitizeInput` for handling edge cases.
+    - _Unit Test:_ **Unit tests in `api.test.mjs`**. Specifically tested `processLeaderboardData`, which handles the complex logic of mapping raw API data, filtering by language, and sorting scores.
 
 12. **Message for non-existent users:**
-    - _Manual Test:_ Entered "invalid_user_123" and verified the UI message appeared.
+    - _Manual Test:_ Entered "invalid_user_123" and verified the UI message appeared using the `wrongName` variable.
 
 13. **API/Network error message:**
-    - _Manual Test:_ Used Chrome DevTools "Offline" mode and verified the connection error message appeared.
+    - _Manual Test:_ Used Chrome DevTools "Offline" mode and verified the `displayGeneralError` message appeared.
