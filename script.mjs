@@ -1,62 +1,171 @@
-import { fetchAllUsers, sanitizeInput } from "./api.mjs";
+import { fetchAllUsers, sanitizeInput, getUniqueLanguages } from "./api.mjs";
 
-const form = document.querySelector("#user-form");
-const input = document.querySelector("#username-input");
-const messageContainer = document.querySelector("#message-container");
+// Central State: Keeps track of current data so we don't have to re-fetch
+const appState = {
+  userList: [],
+  selectedLanguage: "overall",
+};
 
-form.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  messageContainer.innerHTML = ""; // Clear UI
+// Select HTML elements with descriptive names
+const leaderboardForm = document.querySelector("#user-form");
+const usernameInput = document.querySelector("#username-input");
+const feedbackMessageContainer = document.querySelector("#message-container");
+const languageSelector = document.querySelector("#language-select");
 
-  const usernames = sanitizeInput(input.value);
+leaderboardForm.addEventListener("submit", async (event) => {
+  event.preventDefault(); // Stop page from refreshing
+  feedbackMessageContainer.innerHTML = ""; // Clear old error messages
 
-  // Better empty input handling
-  if (usernames.length === 0) {
-    renderGeneralError("Please enter at least one username.");
+  const sanitizedUsernames = sanitizeInput(usernameInput.value);
+
+  // If input is empty, show a message and stop the process
+  if (sanitizedUsernames.length === 0) {
+    displayGeneralError("Please enter at least one username.");
     return;
   }
 
   try {
-    const results = await fetchAllUsers(usernames);
+    const fetchResults = await fetchAllUsers(sanitizedUsernames);
 
-    const validUsers = results.filter((result) => result.success);
-    const failedUsers = results.filter((result) => !result.success);
+    // Separate results into "Successful" and "Failed" groups
+    const successfullyFetchedUsers = [];
+    const failedFetchRecords = [];
 
-    // Check if ALL users failed with network errors
-    const networkErrors = failedUsers.filter(
-      (failedUser) => failedUser.error === "Network error",
-    );
-    if (networkErrors.length > 0 && networkErrors.length === usernames.length) {
-      renderGeneralError(
-        "Something went wrong. Please check your internet connection.",
-      );
-      return;
+    fetchResults.forEach((fetchResult) => {
+      if (fetchResult.success === true) {
+        successfullyFetchedUsers.push(fetchResult.data);
+      } else {
+        failedFetchRecords.push(fetchResult);
+      }
+    });
+
+    // 1. If we retrieved valid users, update the global state and table
+    if (successfullyFetchedUsers.length > 0) {
+      appState.userList = successfullyFetchedUsers;
+      appState.selectedLanguage = "overall"; // Reset to overall on every new search
+
+      const availableLanguages = getUniqueLanguages(appState.userList);
+      populateLanguageDropdown(availableLanguages);
+      renderLeaderboardTable();
     }
 
-    console.log("Successfully fetched users:", validUsers);
+    // 2. Handle specific errors for users not found or network issues
+    if (failedFetchRecords.length > 0) {
+      // Check if EVERY search failed because of a connectivity problem
+      const isTotalNetworkFailure =
+        failedFetchRecords.length === sanitizedUsernames.length &&
+        failedFetchRecords[0].error === "Network error";
 
-    if (failedUsers.length > 0) {
-      renderErrors(failedUsers);
+      if (isTotalNetworkFailure) {
+        displayGeneralError(
+          "Something went wrong. Please check your internet connection.",
+        );
+      } else {
+        // Just show which specific usernames were not found
+        displayInvalidUserErrors(failedFetchRecords);
+      }
     }
-  } catch (globalError) {
-    // Safety net for network/unexpected errors
-    renderGeneralError(
-      "Something went wrong. Please check your internet connection.",
-    );
+  } catch (unexpectedError) {
+    displayGeneralError("An unexpected error occurred. Please try again.");
   }
 });
 
-function renderErrors(failedUsers) {
-  const userList = failedUsers.map((user) => `"${user.username}"`).join(", ");
-  const errorPara = document.createElement("p");
-  errorPara.className = "error-message";
-  errorPara.textContent = `The following users could not be found: ${userList}`;
-  messageContainer.appendChild(errorPara);
+// Update the table whenever the user picks a different language
+languageSelector.addEventListener("change", (event) => {
+  appState.selectedLanguage = event.target.value;
+  renderLeaderboardTable();
+});
+
+// --- UI Helper Functions ---
+
+function populateLanguageDropdown(languagesList) {
+  // Clear the dropdown but keep the 'Overall' option at the top
+  languageSelector.innerHTML = '<option value="overall">Overall</option>';
+
+  languagesList.forEach((languageName) => {
+    const dropdownOption = document.createElement("option");
+    dropdownOption.value = languageName;
+
+    // Capitalize for display (e.g., "python" becomes "Python")
+    const capitalizedLanguageName =
+      languageName.charAt(0).toUpperCase() + languageName.slice(1);
+    dropdownOption.textContent = capitalizedLanguageName;
+
+    languageSelector.appendChild(dropdownOption);
+  });
 }
 
-function renderGeneralError(message) {
-  const errorPara = document.createElement("p");
-  errorPara.className = "error-message";
-  errorPara.textContent = message;
-  messageContainer.appendChild(errorPara);
+function renderLeaderboardTable() {
+  const tableBody = document.querySelector("#leaderboard-body");
+  const rowTemplate = document.querySelector("#user-row-template");
+  tableBody.innerHTML = ""; // Empty the table before drawing new rows
+
+  // Step 1: Filter users to find those who have a score in the chosen language
+  const usersMatchingCriteria = [];
+
+  appState.userList.forEach((currentUser) => {
+    let relevantScore;
+
+    if (appState.selectedLanguage === "overall") {
+      relevantScore = currentUser.ranks.overall.score;
+    } else {
+      // Look at the specific languages this user knows
+      const languageDetails =
+        currentUser.ranks.languages[appState.selectedLanguage];
+
+      // If the user actually has a rank in this specific language, get the score
+      if (languageDetails) {
+        relevantScore = languageDetails.score;
+      }
+    }
+
+    // Only add to the display list if a score was found
+    if (relevantScore !== undefined) {
+      usersMatchingCriteria.push({
+        username: currentUser.username,
+        clan: currentUser.clan || "No Clan",
+        score: relevantScore,
+      });
+    }
+  });
+
+  // Step 2: Sort the users from highest score to lowest score
+  usersMatchingCriteria.sort((firstUser, secondUser) => {
+    return secondUser.score - firstUser.score;
+  });
+
+  // Step 3: Create the HTML rows and add them to the table
+  usersMatchingCriteria.forEach((displayUser, userRankIndex) => {
+    const templateContent = rowTemplate.content.cloneNode(true);
+    const tableRow = templateContent.querySelector("tr");
+
+    tableRow.querySelector(".td-username").textContent = displayUser.username;
+    tableRow.querySelector(".td-clan").textContent = displayUser.clan;
+    tableRow.querySelector(".td-score").textContent = displayUser.score;
+
+    // The person at index 0 is the winner
+    if (userRankIndex === 0) {
+      tableRow.classList.add("winner-highlight");
+    }
+
+    tableBody.appendChild(templateContent);
+  });
+}
+
+function displayInvalidUserErrors(failedUserRecords) {
+  const wrongName = failedUserRecords
+    .map((failedUser) => `"${failedUser.username}"`)
+    .join(", ");
+
+  const errorMessageParagraph = document.createElement("p");
+  errorMessageParagraph.className = "error-message";
+  errorMessageParagraph.textContent = `The following users could not be found: ${wrongName}`;
+  feedbackMessageContainer.appendChild(errorMessageParagraph);
+}
+
+function displayGeneralError(messageText) {
+  const errorMessageParagraph = document.createElement("p");
+  errorMessageParagraph.className = "error-message";
+  errorMessageParagraph.textContent = messageText;
+  feedbackMessageContainer.appendChild(errorMessageParagraph);
 }

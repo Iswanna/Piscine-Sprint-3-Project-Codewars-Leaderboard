@@ -22,6 +22,36 @@
 
     <!-- Placeholder for messages/errors -->
     <div id="message-container" role="alert" aria-live="polite"></div>
+
+    <div id="filter-container">
+      <label for="language-select">View Ranking for:</label>
+      <select id="language-select">
+        <option value="overall">Overall</option>
+      </select>
+    </div>
+
+    <!-- Leaderboard Table -->
+    <table id="leaderboard">
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Clan</th>
+          <th>Score</th>
+        </tr>
+      </thead>
+      <tbody id="leaderboard-body">
+        <!-- Rows will be injected here -->
+      </tbody>
+    </table>
+
+    <!-- THE TEMPLATE -->
+    <template id="user-row-template">
+      <tr>
+        <td class="td-username"></td>
+        <td class="td-clan"></td>
+        <td class="td-score"></td>
+      </tr>
+    </template>
   </body>
 
   <script src="script.mjs" type="module"></script>
